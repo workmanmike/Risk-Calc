@@ -110,25 +110,25 @@ export const requirementOutputs: Record<RiskTier, RequirementOutput> = {
   Low: {
     insuranceRequirement: "Reduced / Standard Minimum",
     avettaExceptionTreatment: "Minor exceptions allowed with documented review",
-    approvalAuthority: "Operations Manager",
+    approvalAuthority: "Contract Manager",
     auditFrequency: "Annual"
   },
   Moderate: {
     insuranceRequirement: "Standard Requirements",
     avettaExceptionTreatment: "Safety review required",
-    approvalAuthority: "Safety Manager",
+    approvalAuthority: "Contract Manager",
     auditFrequency: "Semiannual"
   },
   High: {
     insuranceRequirement: "Full Requirements",
     avettaExceptionTreatment: "Limited exceptions, written justification required",
-    approvalAuthority: "Director / VP",
+    approvalAuthority: "SVP of Risk",
     auditFrequency: "Quarterly"
   },
   Critical: {
     insuranceRequirement: "Executive Review Required",
     avettaExceptionTreatment: "No exceptions without executive approval",
-    approvalAuthority: "Executive Leadership",
+    approvalAuthority: "President",
     auditFrequency: "Monthly / Pre-job review"
   }
 };
