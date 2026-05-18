@@ -3,11 +3,19 @@ import { useMemo, useState } from "react";
 import {
   calculateRisk,
   ContractorInput,
+  GatewayStatus,
+  InsuranceVarianceFlexibility,
   regions,
   RiskTier,
   scopeCategories,
   weights
 } from "./riskModel";
+
+const insuranceVarianceFlexibilityOptions: InsuranceVarianceFlexibility[] = [
+  "No Variance Allowed",
+  "Client Approval Required",
+  "Flexible"
+];
 
 const samples: Record<RiskTier, ContractorInput> = {
   Low: {
@@ -22,7 +30,9 @@ const samples: Record<RiskTier, ContractorInput> = {
     fatalities: 0,
     hasSafetyProgram: true,
     hasSafetyManager: true,
-    yearsInBusiness: 12
+    yearsInBusiness: 12,
+    insuranceVarianceRequested: false,
+    insuranceVarianceFlexibility: "Flexible"
   },
   Moderate: {
     contractorName: "Brightline Fence & Civil",
@@ -36,7 +46,9 @@ const samples: Record<RiskTier, ContractorInput> = {
     fatalities: 0,
     hasSafetyProgram: true,
     hasSafetyManager: false,
-    yearsInBusiness: 5
+    yearsInBusiness: 5,
+    insuranceVarianceRequested: true,
+    insuranceVarianceFlexibility: "Client Approval Required"
   },
   High: {
     contractorName: "Pacific Electrical Fieldworks",
@@ -50,7 +62,9 @@ const samples: Record<RiskTier, ContractorInput> = {
     fatalities: 0,
     hasSafetyProgram: false,
     hasSafetyManager: true,
-    yearsInBusiness: 2
+    yearsInBusiness: 2,
+    insuranceVarianceRequested: true,
+    insuranceVarianceFlexibility: "Flexible"
   },
   Critical: {
     contractorName: "Atlas Tower Construction",
@@ -64,7 +78,9 @@ const samples: Record<RiskTier, ContractorInput> = {
     fatalities: 1,
     hasSafetyProgram: false,
     hasSafetyManager: false,
-    yearsInBusiness: 1
+    yearsInBusiness: 1,
+    insuranceVarianceRequested: true,
+    insuranceVarianceFlexibility: "No Variance Allowed"
   }
 };
 
@@ -80,6 +96,12 @@ const tierStyles: Record<RiskTier, string> = {
   Moderate: "bg-amber-50 text-amber-800 ring-amber-200",
   High: "bg-orange-50 text-orange-800 ring-orange-200",
   Critical: "bg-red-50 text-red-800 ring-red-200"
+};
+
+const gatewayStyles: Record<GatewayStatus, string> = {
+  Pass: "bg-emerald-50 text-emerald-800 ring-emerald-200",
+  Review: "bg-amber-50 text-amber-800 ring-amber-200",
+  Blocked: "bg-red-50 text-red-800 ring-red-200"
 };
 
 const componentLabels: Record<keyof ReturnType<typeof calculateRisk>["componentScores"], string> = {
@@ -230,6 +252,23 @@ function App() {
               />
             </div>
 
+            <div className="rounded-md border border-slate-200 p-3">
+              <div className="mb-3 text-sm font-semibold text-slate-800">Contractual Gateway</div>
+              <div className="grid gap-4">
+                <ToggleField
+                  label="Insurance Variance Requested"
+                  checked={form.insuranceVarianceRequested}
+                  onChange={(value) => updateField("insuranceVarianceRequested", value)}
+                />
+                <SelectField
+                  label="Client Insurance Flexibility"
+                  value={form.insuranceVarianceFlexibility}
+                  options={insuranceVarianceFlexibilityOptions}
+                  onChange={(value) => updateField("insuranceVarianceFlexibility", value)}
+                />
+              </div>
+            </div>
+
             <label className="grid gap-1.5">
               <span className="text-sm font-medium text-slate-700">Notes</span>
               <textarea
@@ -272,6 +311,28 @@ function App() {
                 <RequirementRow label="Audit Frequency" value={result.requirements.auditFrequency} />
               </div>
             </div>
+          </div>
+
+          <div className="rounded-lg border border-slate-200 bg-white p-5 shadow-executive">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+              <div>
+                <p className="text-sm font-semibold uppercase tracking-[0.16em] text-slate-500">Gateways & Guardrails</p>
+                <h2 className="mt-1 text-lg font-semibold">{result.gateway.title}</h2>
+              </div>
+              <span className={`inline-flex w-fit items-center gap-2 rounded-full px-3 py-1.5 text-sm font-bold ring-1 ${gatewayStyles[result.gateway.status]}`}>
+                {result.gateway.status}
+              </span>
+            </div>
+            <div className="mt-4 grid gap-3 sm:grid-cols-2">
+              <RequirementRow
+                label="Insurance Variance"
+                value={result.gateway.insuranceVarianceAllowed ? "Available for review" : "Not allowed"}
+              />
+              <RequirementRow label="Client Contract Position" value={form.insuranceVarianceFlexibility} />
+            </div>
+            <p className="mt-4 rounded-md border border-slate-200 bg-slate-50 px-4 py-3 text-sm leading-6 text-slate-700">
+              {result.gateway.rationale}
+            </p>
           </div>
 
           <div className="rounded-lg border border-slate-200 bg-white p-5 shadow-executive">
