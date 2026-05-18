@@ -68,6 +68,13 @@ const samples: Record<RiskTier, ContractorInput> = {
   }
 };
 
+const sampleNotes: Record<RiskTier, string> = {
+  Low: "Established professional services partner with clean safety history.",
+  Moderate: "Review safety manager coverage before onboarding.",
+  High: "Confirm corrective actions and document exception rationale.",
+  Critical: "Escalate for executive review before any award or mobilization."
+};
+
 const tierStyles: Record<RiskTier, string> = {
   Low: "bg-emerald-50 text-emerald-800 ring-emerald-200",
   Moderate: "bg-amber-50 text-amber-800 ring-amber-200",
@@ -94,7 +101,13 @@ type NumberFieldKey = {
 
 function App() {
   const [form, setForm] = useState<ContractorInput>(samples.Moderate);
+  const [notes, setNotes] = useState(sampleNotes.Moderate);
   const result = useMemo(() => calculateRisk(form), [form]);
+
+  const loadSample = (tier: RiskTier) => {
+    setForm(samples[tier]);
+    setNotes(sampleNotes[tier]);
+  };
 
   const updateField = <K extends FieldKey>(field: K, value: ContractorInput[K]) => {
     setForm((current) => ({
@@ -125,7 +138,7 @@ function App() {
               <button
                 key={tier}
                 type="button"
-                onClick={() => setForm(samples[tier])}
+                onClick={() => loadSample(tier)}
                 className="rounded-md border border-slate-300 bg-white px-3 py-2 text-sm font-semibold text-slate-700 shadow-sm transition hover:border-slate-500 hover:text-slate-950"
               >
                 {tier} sample
@@ -216,6 +229,17 @@ function App() {
                 onChange={(value) => updateField("hasSafetyManager", value)}
               />
             </div>
+
+            <label className="grid gap-1.5">
+              <span className="text-sm font-medium text-slate-700">Notes</span>
+              <textarea
+                value={notes}
+                onChange={(event) => setNotes(event.target.value)}
+                rows={5}
+                className="resize-y rounded-md border border-slate-300 px-3 py-2.5 text-sm leading-6 outline-none transition focus:border-slate-700 focus:ring-2 focus:ring-slate-200"
+                placeholder="Add onboarding notes, follow-ups, exception rationale, or review context."
+              />
+            </label>
           </form>
         </section>
 
@@ -233,10 +257,10 @@ function App() {
             </div>
 
             <div className="mt-6 grid gap-4 sm:grid-cols-[0.8fr_1.2fr]">
-              <div className="rounded-md bg-slate-950 p-5 text-white">
+              <div className="rounded-md bg-slate-950 p-6 text-white sm:min-h-48">
                 <p className="text-sm font-medium text-slate-300">Final Risk Score</p>
-                <div className="mt-3 flex items-end gap-2">
-                  <span className="text-6xl font-semibold tracking-normal">{result.finalScore}</span>
+                <div className="mt-4 flex flex-wrap items-end gap-x-2 gap-y-1">
+                  <span className="text-5xl font-semibold tracking-normal sm:text-6xl lg:text-7xl">{result.finalScore}</span>
                   <span className="pb-2 text-lg text-slate-300">/ 100</span>
                 </div>
               </div>
