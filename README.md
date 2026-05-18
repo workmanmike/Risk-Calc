@@ -45,3 +45,17 @@ The final risk score is the sum of weighted component scores, rounded to one dec
 | 76-100 | Critical |
 
 Each tier maps to insurance requirements, Avetta exception treatment, approval authority, and audit frequency. The UI includes sample contractor buttons for Low, Moderate, High, and Critical examples.
+
+## Contractual gateways and guardrails
+
+The risk score recommends a baseline risk tier, but contractual requirements can override insurance variance treatment.
+
+The app includes an insurance variance gateway with three client contract positions:
+
+| Client position | Gateway behavior |
+| --- | --- |
+| No Variance Allowed | Hard stop. Insurance variance is not allowed because client flow-down requirements require full contractual compliance. |
+| Client Approval Required | Variance can only move forward with documented client approval and contract review. |
+| Flexible | Variance may be reviewed under normal score-based authority and guardrails. |
+
+This keeps the model from recommending an insurance exception where the underlying client contract does not permit one.
