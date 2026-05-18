@@ -22,6 +22,8 @@ export const regions = [
 export type ScopeCategory = (typeof scopeCategories)[number];
 export type Region = (typeof regions)[number];
 export type RiskTier = "Low" | "Moderate" | "High" | "Critical";
+export type InsuranceVarianceFlexibility = "No Variance Allowed" | "Client Approval Required" | "Flexible";
+export type GatewayStatus = "Pass" | "Review" | "Blocked";
 
 export interface ContractorInput {
   contractorName: string;
@@ -36,6 +38,8 @@ export interface ContractorInput {
   hasSafetyProgram: boolean;
   hasSafetyManager: boolean;
   yearsInBusiness: number;
+  insuranceVarianceRequested: boolean;
+  insuranceVarianceFlexibility: InsuranceVarianceFlexibility;
 }
 
 export interface RequirementOutput {
@@ -45,10 +49,20 @@ export interface RequirementOutput {
   auditFrequency: string;
 }
 
+export interface GatewayResult {
+  status: GatewayStatus;
+  title: string;
+  insuranceVarianceAllowed: boolean;
+  insuranceRequirement: string;
+  avettaExceptionTreatment: string;
+  rationale: string;
+}
+
 export interface RiskResult {
   finalScore: number;
   tier: RiskTier;
   requirements: RequirementOutput;
+  gateway: GatewayResult;
   componentScores: {
     scope: number;
     region: number;
@@ -132,6 +146,50 @@ export const requirementOutputs: Record<RiskTier, RequirementOutput> = {
     auditFrequency: "Monthly / Pre-job review"
   }
 };
+
+export function evaluateGateway(input: ContractorInput, baseRequirements: RequirementOutput): GatewayResult {
+  if (!input.insuranceVarianceRequested) {
+    return {
+      status: "Pass",
+      title: "No insurance variance requested",
+      insuranceVarianceAllowed: true,
+      insuranceRequirement: baseRequirements.insuranceRequirement,
+      avettaExceptionTreatment: baseRequirements.avettaExceptionTreatment,
+      rationale: "Score-based requirements apply because no insurance variance is being requested."
+    };
+  }
+
+  if (input.insuranceVarianceFlexibility === "No Variance Allowed") {
+    return {
+      status: "Blocked",
+      title: "Hard contractual gateway",
+      insuranceVarianceAllowed: false,
+      insuranceRequirement: "Full contractual insurance compliance required",
+      avettaExceptionTreatment: "No insurance variance allowed due to client flow-down requirements",
+      rationale: "Client flow-down provisions prohibit variance in insurance requirements, so the model cannot approve or recommend an exception in that field."
+    };
+  }
+
+  if (input.insuranceVarianceFlexibility === "Client Approval Required") {
+    return {
+      status: "Review",
+      title: "Client approval gateway",
+      insuranceVarianceAllowed: true,
+      insuranceRequirement: "Variance requires documented client approval",
+      avettaExceptionTreatment: "Hold exception pending client approval and contract review",
+      rationale: "The contract allows possible flexibility, but the insurance variance must be approved under the client-specific flow-down process."
+    };
+  }
+
+  return {
+    status: "Review",
+    title: "Flexible contractual gateway",
+    insuranceVarianceAllowed: true,
+    insuranceRequirement: baseRequirements.insuranceRequirement,
+    avettaExceptionTreatment: `${baseRequirements.avettaExceptionTreatment}; insurance variance may be reviewed under standard authority`,
+    rationale: "Client requirements appear flexible enough for a normal risk-based variance review."
+  };
+}
 
 export function scoreEmr(emr: number): number {
   if (emr <= 0.5) return 5;
@@ -223,11 +281,18 @@ export function calculateRisk(input: ContractorInput): RiskResult {
   const rawScore = Object.values(weightedScores).reduce((total, score) => total + score, 0);
   const finalScore = Math.round(rawScore * 10) / 10;
   const tier = getRiskTier(finalScore);
+  const requirements = requirementOutputs[tier];
+  const gateway = evaluateGateway(input, requirements);
 
   return {
     finalScore,
     tier,
-    requirements: requirementOutputs[tier],
+    requirements: {
+      ...requirements,
+      insuranceRequirement: gateway.insuranceRequirement,
+      avettaExceptionTreatment: gateway.avettaExceptionTreatment
+    },
+    gateway,
     componentScores,
     weightedScores
   };
